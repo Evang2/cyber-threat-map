@@ -19,7 +19,7 @@
   flex-shrink: 0; /* Prevent the panel from shrinking */
 }
 
-/* Map container should take remaining space */
+
 .map-container {
   flex: 1;
   height: 100vh;

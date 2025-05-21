@@ -18,8 +18,8 @@ function MapView({ attacks }) {
     new ArcLayer({
       id: "arc-layer",
       data: attacks,
-      getSourcePosition: d => [d.source.lon, d.source.lat],
-      getTargetPosition: d => [d.target.lon, d.target.lat],
+      getSourcePosition: (d) => [d.source.lon, d.source.lat],
+      getTargetPosition: (d) => [d.target.lon, d.target.lat],
       getSourceColor: [255, 0, 0, 180],
       getTargetColor: [0, 255, 0, 180],
       strokeWidth: 2,
@@ -45,7 +45,6 @@ function MapView({ attacks }) {
   };
 
   return (
-    // Remove the duplicate panel and flex container - just return the map
     <div style={{ width: "100%", height: "100%" }}>
       <DeckGL
         initialViewState={initialViewState}
@@ -66,9 +65,12 @@ function MapView({ attacks }) {
               anchor="top"
             >
               <div style={{ fontSize: "12px" }}>
-                <strong>{hoverInfo.object.type}</strong> attack<br />
-                Severity: <em>{hoverInfo.object.severity}</em><br />
-                {hoverInfo.object.source.country} ➔ {hoverInfo.object.target.country}
+                <strong>{hoverInfo.object.type}</strong> attack
+                <br />
+                Severity: <em>{hoverInfo.object.severity}</em>
+                <br />
+                {hoverInfo.object.source.country} ➔{" "}
+                {hoverInfo.object.target.country}
               </div>
             </Popup>
           )}
