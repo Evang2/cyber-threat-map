@@ -1,0 +1,134 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #111;
+  color: #eee;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+}
+
+.globe-container {
+  flex: 1;
+  position: relative;
+}
+
+.globe-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 0;
+}
+
+.side-panel {
+  width: 350px;
+  background-color: #1e1e1e;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attack-log {
+  width: 300px;
+  background: #111;
+  color: #fff;
+  height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid #333;
+  padding: 10px;
+  font-family: monospace;
+}
+
+.stats-panel {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 10px;
+}
+
+.log-entries {
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+.log-entry {
+  padding: 5px 0;
+  font-size: 0.9em;
+  border-bottom: 1px solid #222;
+}
+
+.flag {
+  width: 20px;
+  height: 14px;
+  vertical-align: middle;
+  margin-right: 5px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.severity.high {
+  color: red;
+}
+.severity.medium {
+  color: orange;
+}
+.severity.low {
+  color: green;
+}
+.severity.unknown {
+  color: gray;
+}
+
+.timestamp {
+  color: #888;
+  margin-right: 5px;
+}
