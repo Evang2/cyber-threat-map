@@ -1,4 +1,3 @@
-// backend/server.js
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -6,18 +5,19 @@ const { Server } = require("socket.io");
 const axios = require("axios");
 
 const TARGET_CITIES = [
-  { name: "New York, USA", lat: 40.7128, lon: -74.0060 },
+  { name: "New York, USA", lat: 40.7128, lon: -74.006 },
   { name: "London, UK", lat: 51.5074, lon: -0.1278 },
   { name: "Tokyo, Japan", lat: 35.6895, lon: 139.6917 },
-  { name: "Berlin, Germany", lat: 52.52, lon: 13.4050 },
+  { name: "Berlin, Germany", lat: 52.52, lon: 13.405 },
   { name: "Sydney, Australia", lat: -33.8688, lon: 151.2093 },
   { name: "São Paulo, Brazil", lat: -23.5505, lon: -46.6333 },
-  { name: "Toronto, Canada", lat: 43.651070, lon: -79.347015 },
+  { name: "Toronto, Canada", lat: 43.65107, lon: -79.347015 },
   { name: "Cape Town, South Africa", lat: -33.9249, lon: 18.4241 },
 ];
 
 const app = express();
 app.use(cors());
+app.use(express.json()); // Important for parsing JSON body
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -36,7 +36,6 @@ const attackHistory = [];
 
 io.on("connection", (socket) => {
   console.log("🟢 Frontend connected via Socket.IO");
-  // Send previous history
   attackHistory.forEach((attack) => socket.emit("new_attack", attack));
 });
 
@@ -56,9 +55,9 @@ async function getGeo(ip) {
   }
 }
 
-// Extract clean IPs
 const ipRegex = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 const ipPortRegex = /^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/;
+
 function extractIP(entry) {
   if (entry.host && ipRegex.test(entry.host)) return entry.host;
   if (entry.ioc && ipRegex.test(entry.ioc)) return entry.ioc;
@@ -84,7 +83,7 @@ async function fetchThreatData() {
       if (!srcIP) continue;
 
       const sourceGeo = await getGeo(srcIP);
-      const targetGeo = getRandomTarget(); // realistic random city
+      const targetGeo = getRandomTarget();
 
       if (sourceGeo && targetGeo) {
         const attack = {
@@ -111,12 +110,28 @@ app.get("/", (req, res) => {
   res.send("✅ Cyber Threat Map backend is running.");
 });
 
+// 🔐 Proxy route to avoid CORS when calling ThreatFox from frontend
+app.post("/api/threatfox", async (req, res) => {
+  try {
+    const response = await axios.post(THREATFOX_URL, req.body, {
+      headers: { "Content-Type": "application/json" },
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Proxy error to ThreatFox:", err.message);
+    const status = err.response?.status || 500;
+    const msg = err.response?.data || { error: "Proxy failure" };
+    res.status(status).json(msg);
+  }
+});
+
 server.listen(PORT, () => {
   console.log(`🚀 Backend listening at http://localhost:${PORT}`);
 });
 
 function getRandomTarget() {
-  const target = TARGET_CITIES[Math.floor(Math.random() * TARGET_CITIES.length)];
+  const target =
+    TARGET_CITIES[Math.floor(Math.random() * TARGET_CITIES.length)];
   return {
     lat: target.lat,
     lon: target.lon,

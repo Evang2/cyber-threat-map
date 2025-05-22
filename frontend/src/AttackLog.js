@@ -1,53 +1,226 @@
+import React from "react";
+
 function AttackLog({ attacks }) {
   const totalAttacks = attacks.length;
-  const severityCount = (level) =>
-    attacks.filter((a) => a.severity === level).length;
 
-  const getSeverityColor = (severity) => {
-    switch (severity.toLowerCase()) {
-      case 'high': return 'text-red-400';
-      case 'medium': return 'text-orange-400';
-      case 'low': return 'text-yellow-400';
-      default: return 'text-gray-400';
-    }
+  // Enhanced severity mapping based on ThreatFox threat types
+  const getSeverityInfo = (severity) => {
+    const severityMap = {
+      // High Risk
+      botnet_cc: {
+        level: "high",
+        label: "Botnet C&C",
+        description: "Command & Control Server",
+      },
+      malware_download: {
+        level: "high",
+        label: "Malware Download",
+        description: "Active Malware Distribution",
+      },
+      exploit_kit: {
+        level: "high",
+        label: "Exploit Kit",
+        description: "Automated Exploitation Tool",
+      },
+
+      // Medium Risk
+      phishing: {
+        level: "medium",
+        label: "Phishing",
+        description: "Credential Harvesting",
+      },
+      suspicious_domain: {
+        level: "medium",
+        label: "Suspicious Domain",
+        description: "Potentially Malicious Domain",
+      },
+      payload_delivery: {
+        level: "medium",
+        label: "Payload Delivery",
+        description: "Malware Distribution Point",
+      },
+
+      // Lower Risk
+      reconnaissance: {
+        level: "low",
+        label: "Reconnaissance",
+        description: "Information Gathering",
+      },
+      scanning: {
+        level: "low",
+        label: "Scanning",
+        description: "Network/Port Scanning",
+      },
+
+      // Default
+      default: {
+        level: "unknown",
+        label: "Unknown",
+        description: "Unclassified Threat",
+      },
+    };
+
+    return severityMap[severity] || severityMap["default"];
   };
 
+  // Get severity counts with enhanced mapping
+  const getSeverityCounts = () => {
+    const counts = {
+      high: 0,
+      medium: 0,
+      low: 0,
+      unknown: 0,
+    };
+
+    attacks.forEach((attack) => {
+      const severityInfo = getSeverityInfo(attack.severity);
+      counts[severityInfo.level]++;
+    });
+
+    return counts;
+  };
+
+  const severityCounts = getSeverityCounts();
+
+  // Function to get color class based on mapped severity level
+  const getSeverityClass = (severity) => {
+    const severityInfo = getSeverityInfo(severity);
+    return `severity ${severityInfo.level}`;
+  };
+
+  // Get unique threat types for summary
+  const getUniqueThreatTypes = () => {
+    const typeCount = {};
+    attacks.forEach((attack) => {
+      const severityInfo = getSeverityInfo(attack.severity);
+      typeCount[severityInfo.label] = (typeCount[severityInfo.label] || 0) + 1;
+    });
+    return typeCount;
+  };
+
+  const threatTypeCounts = getUniqueThreatTypes();
+
   return (
-    <div className="flex-1">
-      <div className="mb-6 p-4 bg-gray-800 rounded-lg">
-        <h3 className="text-lg font-bold mb-3 text-white">Attack Summary</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <p className="text-gray-300">Total: <span className="text-white font-semibold">{totalAttacks}</span></p>
-          <p className="text-gray-300">High: <span className="text-red-400 font-semibold">{severityCount("High")}</span></p>
-          <p className="text-gray-300">Medium: <span className="text-orange-400 font-semibold">{severityCount("Medium")}</span></p>
-          <p className="text-gray-300">Low: <span className="text-yellow-400 font-semibold">{severityCount("Low")}</span></p>
+    <div className="attack-log">
+      <div className="stats-panel">
+        <h3>Attack Summary</h3>
+
+        {/* Overall Stats */}
+        <div style={{ marginBottom: "15px" }}>
+          <p style={{ fontSize: "16px", fontWeight: "bold" }}>
+            Total Attacks: {totalAttacks}
+          </p>
+        </div>
+
+        {/* Severity Level Summary */}
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{ fontSize: "14px", marginBottom: "8px", color: "#ccc" }}>
+            Risk Levels:
+          </h4>
+          <p style={{ color: "#ff4757", margin: "2px 0" }}>
+            🔴 High: {severityCounts.high}
+          </p>
+          <p style={{ color: "#ffa726", margin: "2px 0" }}>
+            🟠 Medium: {severityCounts.medium}
+          </p>
+          <p style={{ color: "#ffeb3b", margin: "2px 0" }}>
+            🟡 Low: {severityCounts.low}
+          </p>
+          <p style={{ color: "#9e9e9e", margin: "2px 0" }}>
+            ⚪ Unknown: {severityCounts.unknown}
+          </p>
+        </div>
+
+        {/* Threat Type Breakdown */}
+        <div style={{ marginBottom: "15px" }}>
+          <h4 style={{ fontSize: "14px", marginBottom: "8px", color: "#ccc" }}>
+            Threat Types:
+          </h4>
+          {Object.entries(threatTypeCounts)
+            .slice(0, 5)
+            .map(([type, count]) => (
+              <p key={type} style={{ margin: "2px 0", fontSize: "12px" }}>
+                {type}: {count}
+              </p>
+            ))}
         </div>
       </div>
 
-      <div className="space-y-2 max-h-96 overflow-y-auto">
-        <h3 className="text-lg font-bold mb-3 text-white">Recent Attacks</h3>
-        {attacks.slice(0, 20).map((attack) => (
-          <div key={attack.id} className="p-3 bg-gray-800 rounded text-sm border-l-4 border-blue-500">
-            <div className="flex justify-between items-start mb-1">
-              <span className="text-xs text-gray-400">
-                {new Date(attack.timestamp).toLocaleTimeString()}
-              </span>
-              <span className={`text-xs font-semibold ${getSeverityColor(attack.severity)}`}>
-                {attack.severity}
-              </span>
+      <div
+        className="log-entries"
+        style={{ maxHeight: "400px", overflowY: "auto" }}
+      >
+        <h4 style={{ fontSize: "14px", marginBottom: "10px", color: "#ccc" }}>
+          Recent Activity:
+        </h4>
+        {attacks.slice(0, 50).map((attack, i) => {
+          const severityInfo = getSeverityInfo(attack.severity);
+          return (
+            <div
+              key={i}
+              className="log-entry"
+              style={{
+                padding: "8px",
+                margin: "5px 0",
+                backgroundColor: "#2a2a2a",
+                borderRadius: "4px",
+                borderLeft: `3px solid ${
+                  severityInfo.level === "high"
+                    ? "#ff4757"
+                    : severityInfo.level === "medium"
+                    ? "#ffa726"
+                    : severityInfo.level === "low"
+                    ? "#ffeb3b"
+                    : "#9e9e9e"
+                }`,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  className="timestamp"
+                  style={{ fontSize: "11px", color: "#999" }}
+                >
+                  {new Date(attack.timestamp).toLocaleTimeString()}
+                </span>
+                <span
+                  className={getSeverityClass(attack.severity)}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {severityInfo.level}
+                </span>
+              </div>
+
+              <div style={{ margin: "4px 0", fontSize: "13px" }}>
+                <strong>{attack.source.country}</strong> ➜{" "}
+                <strong>{attack.target.country}</strong>
+              </div>
+
+              <div style={{ fontSize: "12px", color: "#ccc" }}>
+                <div>
+                  🦠 <strong>{attack.type}</strong>
+                </div>
+                <div
+                  style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}
+                >
+                  {severityInfo.label} - {severityInfo.description}
+                </div>
+              </div>
             </div>
-            <div className="text-white">
-              <span className="font-medium">{attack.source.country}</span>
-              <span className="mx-2 text-gray-400">→</span>
-              <span className="font-medium">{attack.target.country}</span>
-            </div>
-            <div className="text-blue-400 font-medium mt-1">
-              {attack.type}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
+
 export default AttackLog;
