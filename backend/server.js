@@ -3,6 +3,7 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const axios = require("axios");
+require("dotenv").config();
 
 const TARGET_CITIES = [
   { name: "New York, USA", lat: 40.7128, lon: -74.006 },
@@ -17,7 +18,7 @@ const TARGET_CITIES = [
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Important for parsing JSON body
+app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -30,9 +31,12 @@ const io = new Server(server, {
 const PORT = 3001;
 const IP_LOOKUP_URL = "http://ip-api.com/json/";
 const THREATFOX_URL = "https://threatfox-api.abuse.ch/api/v1/";
+const AUTH_KEY = process.env.THREATFOX_AUTH_KEY;
 
-// Memory log for attacks
 const attackHistory = [];
+let cachedThreatfoxResponses = {}; // cache by query key
+let lastCacheTimestamps = {};
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 io.on("connection", (socket) => {
   console.log("🟢 Frontend connected via Socket.IO");
@@ -72,7 +76,12 @@ async function fetchThreatData() {
     const res = await axios.post(
       THREATFOX_URL,
       { query: "get_iocs", limit: 50 },
-      { headers: { "Content-Type": "application/json" } }
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Auth-Key": AUTH_KEY,
+        },
+      }
     );
 
     const threats = res.data.data.filter((entry) => extractIP(entry));
@@ -110,12 +119,26 @@ app.get("/", (req, res) => {
   res.send("✅ Cyber Threat Map backend is running.");
 });
 
-// 🔐 Proxy route to avoid CORS when calling ThreatFox from frontend
 app.post("/api/threatfox", async (req, res) => {
+  const cacheKey = JSON.stringify(req.body);
+  const now = Date.now();
+
+  if (
+    cachedThreatfoxResponses[cacheKey] &&
+    now - lastCacheTimestamps[cacheKey] < CACHE_DURATION
+  ) {
+    return res.json(cachedThreatfoxResponses[cacheKey]);
+  }
+
   try {
     const response = await axios.post(THREATFOX_URL, req.body, {
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Auth-Key": AUTH_KEY,
+      },
     });
+    cachedThreatfoxResponses[cacheKey] = response.data;
+    lastCacheTimestamps[cacheKey] = now;
     res.json(response.data);
   } catch (err) {
     console.error("❌ Proxy error to ThreatFox:", err.message);
